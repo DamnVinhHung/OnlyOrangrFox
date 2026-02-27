@@ -14,11 +14,11 @@ on:
       DT:
         description: 'Device tree - repo'
         required: true
-        default: 'https://gitlab.com/1f1e33/android/orangefox_device_xiaomi_veux.git'
+        default: 'https://github.com/cachiusa/orangefox_device_xiaomi_veux.git'
       DT_BRANCH:
         description: 'Device tree - branch'
         required: true
-        default: 'fox_12.1-dev'
+        default: 'fox_12.1'
       DT_PATH:
         description: 'Device tree - path'
         required: true
@@ -31,7 +31,7 @@ on:
         description: 'Use ccache'
         type: boolean
         required: true
-        default: true
+        default: false
 
 jobs:
   build:
@@ -143,14 +143,14 @@ jobs:
             git clone https://gitlab.com/1f1e33/android/AnyKernel3.git -b beta
             mv *.cpio AnyKernel3/recovery
 
-            cd AnyKernel3; zip -r1 ../${{ env.COMMIT_ID }}.zip . -x "**.git*" "*placeholder"
+            cd AnyKernel3; zip -r1 ${{ env.OFOX_TOP }}/${{ env.COMMIT_ID }}.zip . -x "**.git*" "*placeholder"
         fi
 
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}/tempo/ofox-ci.zip
+          ${{ env.OFOX_TOP }}/${{ env.COMMIT_ID }}.zip
         name: ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
