@@ -44,7 +44,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
               
-    - name: Clean-up
+    - name: Clean up
       uses: rokibhasansagar/slimhub_actions@main
 
     - name: Swap on
@@ -72,12 +72,18 @@ jobs:
       if: github.event.inputs.USE_CCACHE == 'true'
       with:
         max-size: "5G"
+
+    - name: Declare environments
+      run: |
+        set -x
+        echo "OFOX_TOP=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}" >> $GITHUB_ENV
+        echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       
     - name: repo sync
       run: |
+        set -x
         df -h
-        mkdir -p ${GITHUB_WORKSPACE}/OrangeFox; cd ${GITHUB_WORKSPACE}/OrangeFox
-        echo "OFOX_TOP=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}" >> $GITHUB_ENV
+        mkdir -p ${{ env.OFOX_TOP }}; cd ${{ env.OFOX_TOP }}
         git config --global user.name "github"
         git config --global user.email "nobody@github.com"
         git clone https://gitlab.com/OrangeFox/sync.git -b master; cd sync
@@ -87,13 +93,13 @@ jobs:
 
     - name: Get device tree
       run: |
+        set -x
         df -h
         cd ${{ env.OFOX_TOP }}
         git clone ${{ github.event.inputs.DT }} \
                -b ${{ github.event.inputs.DT_BRANCH }} \
                 ./${{ github.event.inputs.DT_PATH }}
         echo "COMMIT_ID=$(git -C ${{ github.event.inputs.DT_PATH }} rev-parse --short HEAD)" >> $GITHUB_ENV
-        echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
 
         if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
           set +e; source build/envsetup.sh
@@ -102,6 +108,7 @@ jobs:
 
     - name: Build
       run: |
+        set -x
         df -h
         cd ${{ env.OFOX_TOP }}
         
@@ -121,8 +128,9 @@ jobs:
           lunch twrp_veux-eng && mka adbd bootimage
         fi
 
-    - name: Post-build
+    - name: Post build
       run: |
+        set -x
         df -h
         if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
             cd ${{ env.OFOX_TOP }}; mkdir tempo; cd tempo
@@ -144,7 +152,7 @@ jobs:
             cd AnyKernel3; zip -r1 ${{ env.OFOX_TOP }}/${{ env.COMMIT_ID }}.zip . -x "**.git*" "*placeholder"
         fi
 
-    - name: Release
+    - name: Upload
       uses: softprops/action-gh-release@v2
       with:
         files: |
