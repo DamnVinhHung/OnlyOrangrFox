@@ -44,8 +44,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
               
-#    - name: Clean-up
-#      uses: rokibhasansagar/slimhub_actions@main
+    - name: Clean-up
+      uses: rokibhasansagar/slimhub_actions@main
 
     - name: Swap on
       uses: pierotofy/set-swap-space@master
@@ -54,7 +54,7 @@ jobs:
       
     - name: apt install & repo install
       run: |
-        echo "Installing..."
+        df -h
         sudo apt-get update
         sudo apt-get install \
         git-core gnupg flex bison build-essential zip curl zlib1g-dev \
@@ -75,6 +75,7 @@ jobs:
       
     - name: repo sync
       run: |
+        df -h
         mkdir -p ${GITHUB_WORKSPACE}/OrangeFox; cd ${GITHUB_WORKSPACE}/OrangeFox
         echo "OFOX_TOP=${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}" >> $GITHUB_ENV
         git config --global user.name "github"
@@ -84,28 +85,24 @@ jobs:
           --branch ${{ github.event.inputs.MANIFEST_BRANCH }} \
           --path ${{ env.OFOX_TOP }}
 
-
-    - name: Show free space
-      run: df -h
-
     - name: Get device tree
       run: |
+        df -h
         cd ${{ env.OFOX_TOP }}
-        git clone \
-            ${{ github.event.inputs.DT }} \
-            -b ${{ github.event.inputs.DT_BRANCH }} \
-            ./${{ github.event.inputs.DT_PATH }} ; cd ${{ github.event.inputs.DT_PATH }}
-        echo "COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        git clone ${{ github.event.inputs.DT }} \
+               -b ${{ github.event.inputs.DT_BRANCH }} \
+                ./${{ github.event.inputs.DT_PATH }}
+        echo "COMMIT_ID=$(git -C ${{ github.event.inputs.DT_PATH }} rev-parse --short HEAD)" >> $GITHUB_ENV
         echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
 
         if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
-          cd -; set +e; source build/envsetup.sh
+          set +e; source build/envsetup.sh
           sed -i '$ a CONFIG_KSU=y' kernel/xiaomi/sm6375/arch/arm64/configs/veux_defconfig
         fi
 
     - name: Build
       run: |
-        set +e
+        df -h
         cd ${{ env.OFOX_TOP }}
         
         if [[ ${{ github.event.inputs.USE_CCACHE }} = true ]]; then
@@ -115,7 +112,7 @@ jobs:
           # sed -i 's/return sandboxConfig\.working/return false/g' build/soong/ui/build/sandbox_linux.go
         fi
 
-        source build/envsetup.sh
+        set +e; source build/envsetup.sh
         lunch twrp_${{ github.event.inputs.DT_NAME }}-eng && mka adbd vendorbootimage
         
         if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
@@ -126,6 +123,7 @@ jobs:
 
     - name: Post-build
       run: |
+        df -h
         if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
             cd ${{ env.OFOX_TOP }}; mkdir tempo; cd tempo
             mgb=${{ env.OFOX_TOP }}/vendor/recovery/tools/magiskboot
