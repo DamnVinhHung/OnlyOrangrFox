@@ -27,6 +27,10 @@ on:
         description: 'Device - name'
         required: true
         default: 'veux'
+      BUILD_TARGET:
+        description: 'Build target'
+        required: true
+        default: 'vendorbootimage'
       USE_CCACHE:
         description: 'Use ccache'
         type: boolean
@@ -119,13 +123,18 @@ jobs:
           # sed -i 's/return sandboxConfig\.working/return false/g' build/soong/ui/build/sandbox_linux.go
         fi
 
-        set +e; source build/envsetup.sh
-        lunch twrp_${{ github.event.inputs.DT_NAME }}-eng && mka adbd vendorbootimage
+        set +ex; source build/envsetup.sh
+        if [[ ${{ github.event.inputs.MANIFEST_BRANCH }} = "14.1" ]]; then
+          _RELEASE=-ap2a
+        fi
+        lunch twrp_veux${_RELEASE}-eng
+        mka adbd ${{ github.event.inputs.BUILD_TARGET }}
         
         if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
           export TWRP_BUILD_BOOT_IMAGE=1
           source build/envsetup.sh
-          lunch twrp_veux-eng && mka adbd bootimage
+          lunch twrp_veux${_RELEASE}-eng
+          mka adbd bootimage
         fi
 
     - name: Post build
