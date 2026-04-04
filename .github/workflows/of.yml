@@ -105,10 +105,10 @@ jobs:
                 ./${{ github.event.inputs.DT_PATH }}
         echo "COMMIT_ID=$(git -C ${{ github.event.inputs.DT_PATH }} rev-parse --short HEAD)" >> $GITHUB_ENV
 
-        if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
-          set +e; source build/envsetup.sh
-          sed -i '$ a CONFIG_KSU=y' kernel/xiaomi/sm6375/arch/arm64/configs/veux_defconfig
-        fi
+      #  if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
+      #    set +e; source build/envsetup.sh
+      #    sed -i '$ a CONFIG_KSU=y' kernel/xiaomi/sm6375/arch/arm64/configs/veux_defconfig
+      #  fi
 
     - name: Build
       run: |
@@ -130,42 +130,42 @@ jobs:
         lunch twrp_veux${_RELEASE}-eng
         mka adbd ${{ github.event.inputs.BUILD_TARGET }}
         
-        if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
-          export TWRP_BUILD_BOOT_IMAGE=1
-          source build/envsetup.sh
-          lunch twrp_veux${_RELEASE}-eng
-          mka adbd bootimage
-        fi
+        # if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
+        #   export TWRP_BUILD_BOOT_IMAGE=1
+        #   source build/envsetup.sh
+        #   lunch twrp_veux${_RELEASE}-eng
+        #   mka adbd bootimage
+        # fi
 
-    - name: Post build
-      run: |
-        set -x
-        df -h
-        if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
-            cd ${{ env.OFOX_TOP }}; mkdir tempo; cd tempo
-            mgb=${{ env.OFOX_TOP }}/vendor/recovery/tools/magiskboot
+    # - name: Post build
+    #   run: |
+    #     set -x
+    #     df -h
+    #     if [[ ${{ github.event.inputs.DT_NAME }} = "veux" ]]; then
+    #         cd ${{ env.OFOX_TOP }}; mkdir tempo; cd tempo
+    #         mgb=${{ env.OFOX_TOP }}/vendor/recovery/tools/magiskboot
 
-            for i in $(find ../out/target/product/veux -name "OrangeFox-*.img"); do
-                $mgb unpack $i
-                if [[ $i == *"vendor_boot"* ]]; then
-                    mv ramdisk.cpio vendor_boot.cpio
-                else
-                    mv ramdisk.cpio boot.cpio
-                fi
-                $mgb cleanup
-            done
+    #         for i in $(find ../out/target/product/veux -name "OrangeFox-*.img"); do
+    #             $mgb unpack $i
+    #             if [[ $i == *"vendor_boot"* ]]; then
+    #                 mv ramdisk.cpio vendor_boot.cpio
+    #             else
+    #                 mv ramdisk.cpio boot.cpio
+    #             fi
+    #             $mgb cleanup
+    #         done
             
-            git clone https://gitlab.com/1f1e33/android/AnyKernel3.git -b beta
-            mv *.cpio AnyKernel3/recovery
+    #         git clone https://gitlab.com/1f1e33/android/AnyKernel3.git -b beta
+    #         mv *.cpio AnyKernel3/recovery
 
-            cd AnyKernel3; zip -r1 ${{ env.OFOX_TOP }}/${{ env.COMMIT_ID }}.zip . -x "**.git*" "*placeholder"
-        fi
+    #         cd AnyKernel3; zip -r1 ${{ env.OFOX_TOP }}/${{ env.COMMIT_ID }}.zip . -x "**.git*" "*placeholder"
+    #     fi
 
     - name: Upload
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ${{ env.OFOX_TOP }}/${{ env.COMMIT_ID }}.zip
+          ${{ env.OFOX_TOP }}/out/target/product/veux/OrangeFox-*.zip
         name: ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
